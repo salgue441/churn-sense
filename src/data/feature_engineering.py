@@ -295,3 +295,250 @@ def perform_customer_segmentation(
         )
         .round(2)
     )
+
+    cluster_analysis.rename(
+        columns={CONFIG["target_column"]: "Churn Rate (%)"}, inplace=True
+    )
+
+    print(f"Customer segmentation completed: {n_clusters} clusters created")
+    print("Cluster analysis:")
+    print(cluster_analysis)
+
+    return df_segmented
+
+
+def get_pca_components(
+    df_segmented: pd.DataFrame, n_components: int = 2
+) -> pd.DataFrame:
+    """
+    Perform PCA for visualizing customer segments.
+
+    Args:
+        df_segmented (pd.DataFrame): DataFrame with cluster labels.
+        n_components (int, optional): Number of PCA components. Default is 2.
+
+    Returns:
+        pd.DataFrame: DataFrame with PCA components and cluster labels.
+    """
+    from sklearn.decomposition import PCA
+
+    cluster_features = [
+        "tenure",
+        "MonthlyCharges",
+        "CLV",
+        "ServiceCount",
+        "AvgSpendPerService",
+    ]
+
+    if not all(feature in df_segmented.columns for feature in cluster_features):
+        print("Warning: Not all cluster features exist in the DataFrame.")
+        cluster_features = [
+            col for col in cluster_features if col in df_segmented.columns
+        ]
+
+    from sklearn.preprocessing import StandardScaler
+
+    X_cluster = df_segmented[cluster_features].copy()
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_cluster)
+
+    pca = PCA(n_components=n_components, random_state=CONFIG["random_seed"])
+    X_pca = pca.fit_transform(X_scaled)
+    pca_df = pd.DataFrame(
+        {
+            "PCA1": X_pca[:, 0],
+            "PCA2": X_pca[:, 1] if n_components > 1 else np.zeros(len(X_pca)),
+            "Cluster": df_segmented["Cluster"].astype(str),
+            "Churn": df_segmented[CONFIG["target_column"]],
+        }
+    )
+
+    print(f"PCA Explained Variance Ratio: {pca.explained_variance_ratio_}")
+    print(
+        f"PCA Cumulative Explained Variance: {np.sum(pca.explained_variance_ratio_):.2f}"
+    )
+
+    return pca_df
+
+
+def identify_at_risk_customers(
+    df: pd.DataFrame,
+    churn_probability_threshold: float = 0.5,
+    model=None,
+    top_n: int = None,
+) -> pd.DataFrame:
+    """
+    Identify customers at high risk of churning.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with customer data.
+        churn_probability_threshold (float, optional): Probability threshold for classifying as at-risk. Default is 0.5.
+        model (object, optional): Trained churn prediction model. If None, uses feature-based rules.
+        top_n (int, optional): If provided, returns the top N customers with highest churn risk.
+
+    Returns:
+        pd.DataFrame: DataFrame with at-risk customers and risk scores.
+    """
+
+    df_risk = df.copy()
+
+    if model is not None:
+        try:
+            X = df_risk.drop(
+                columns=[CONFIG["id_column"], CONFIG["target_column"]], errors="ignore"
+            )
+
+            churn_proba = model.predict_proba(X)[:, 1]
+            df_risk["ChurnProbability"] = churn_proba
+
+            df_risk["AtRisk"] = (churn_proba >= churn_probability_threshold).astype(int)
+
+            df_risk["RiskLevel"] = pd.cut(
+                churn_proba,
+                bins=[0, 0.3, 0.6, 1.0],
+                labels=["Low", "Medium", "High"],
+                include_lowest=True,
+            )
+
+        except Exception as e:
+            print(f"Error using model for prediction: {str(e)}")
+            print("Falling back to feature-based rules...")
+            model = None
+
+    if model is None:
+        print("Using feature-based rules to identify at-risk customers...")
+        risk_score = np.zeros(len(df_risk))
+
+        # Rule 1: Month-to-month contracts are higher risk
+        if "Contract" in df_risk.columns:
+            risk_score += (df_risk["Contract"] == "Month-to-month").astype(int) * 0.3
+
+        # Rule 2: New customers (low tenure) are higher risk
+        if "tenure" in df_risk.columns:
+            risk_score += (df_risk["tenure"] <= 12).astype(int) * 0.2
+
+        # Rule 3: Customers without security services are higher risk
+        if "HasSecurityServices" in df_risk.columns:
+            risk_score += (df_risk["HasSecurityServices"] == 0).astype(int) * 0.15
+
+        elif "OnlineSecurity" in df_risk.columns and "TechSupport" in df_risk.columns:
+            security_risk = (
+                (df_risk["OnlineSecurity"] != "Yes") | (df_risk["TechSupport"] != "Yes")
+            ).astype(int) * 0.15
+
+            risk_score += security_risk
+
+        # Rule 4: Customers with high monthly charges are higher risk
+        if "MonthlyCharges" in df_risk.columns:
+            high_charges = (
+                df_risk["MonthlyCharges"] > df_risk["MonthlyCharges"].median()
+            ).astype(int) * 0.15
+
+            risk_score += high_charges
+
+        # Rule 5: Customers with paperless billing are higher risk
+        if "PaperlessBilling" in df_risk.columns:
+            risk_score += (df_risk["PaperlessBilling"] == "Yes").astype(int) * 0.1
+
+        # Rule 6: Customers with electronic payment methods are higher risk
+        if "PaymentMethod" in df_risk.columns:
+            electronic_payment = (
+                df_risk["PaymentMethod"]
+                .isin(["Electronic check", "Credit card (automatic)"])
+                .astype(int)
+                * 0.1
+            )
+
+            risk_score += electronic_payment
+
+        df_risk["ChurnProbability"] = risk_score
+        df_risk["AtRisk"] = (risk_score >= churn_probability_threshold).astype(int)
+
+        df_risk["RiskLevel"] = pd.cut(
+            risk_score,
+            bins=[0, 0.3, 0.6, 1.0],
+            labels=["Low", "Medium", "High"],
+            include_lowest=True,
+        )
+
+    at_risk_customers = df_risk[df_risk["AtRisk"] == 1].copy()
+    at_risk_customers = at_risk_customers.sort_values(
+        "ChurnProbability", ascending=False
+    )
+
+    if top_n is not None and top_n < len(at_risk_customers):
+        at_risk_customers = at_risk_customers.head(top_n)
+
+    print(f"Identified {len(at_risk_customers)} at-risk customers")
+
+    return at_risk_customers
+
+
+def generate_retention_recommendations(
+    df: pd.DataFrame, at_risk_customers: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Generate personalized retention recommendations for at-risk customers.
+
+    Args:
+        df (pd.DataFrame): Original DataFrame with customer data.
+        at_risk_customers (pd.DataFrame): DataFrame with identified at-risk customers.
+
+    Returns:
+        pd.DataFrame: DataFrame with at-risk customers and retention recommendations.
+    """
+
+    recommendations_df = at_risk_customers.copy()
+    recommendations_df["Recommendations"] = ""
+
+    for idx, customer in recommendations_df.iterrows():
+        recommendations = []
+
+        # Recommendation 1: Contract upgrade
+        if "Contract" in customer and customer["Contract"] == "Month-to-month":
+            recommendations.append("Offer contract upgrade with discount")
+
+        # Recommendation 2: Add security services
+        if "OnlineSecurity" in customer and customer["OnlineSecurity"] != "Yes":
+            recommendations.append("Offer free trial of online security services")
+
+        if "TechSupport" in customer and customer["TechSupport"] != "Yes":
+            recommendations.append("Offer free tech support for 3 months")
+
+        # Recommendation 3: Streaming services
+        streaming_services = []
+        if "StreamingTV" in customer and customer["StreamingTV"] != "Yes":
+            streaming_services.append("TV")
+
+        if "StreamingMovies" in customer and customer["StreamingMovies"] != "Yes":
+            streaming_services.append("Movie")
+
+        if streaming_services:
+            streaming_rec = "Offer streaming bundle ("
+            streaming_rec += " & ".join(streaming_services)
+            streaming_rec += ") with discount"
+            recommendations.append(streaming_rec)
+
+        # Recommendation 4: Discount for high-value customers
+        if "tenure" in customer and "MonthlyCharges" in customer:
+            if customer["tenure"] > 12 and customer["MonthlyCharges"] > 70:
+                recommendations.append("Offer loyalty discount for high-value customer")
+
+        # Recommendation 5: Payment method change
+        if (
+            "PaymentMethod" in customer
+            and customer["PaymentMethod"] == "Electronic check"
+        ):
+            recommendations.append(
+                "Suggest automatic payment method with small discount"
+            )
+
+        if recommendations:
+            recommendations_df.at[idx, "Recommendations"] = " | ".join(recommendations)
+
+        else:
+            recommendations_df.at[idx, "Recommendations"] = "General retention offer"
+
+    print(f"Generated recommendations for {len(recommendations_df)} at-risk customers")
+
+    return recommendations_df
