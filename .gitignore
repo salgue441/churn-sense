@@ -1,10 +1,11 @@
 # Data
 data/
 data/*
+!src/data/
 
-# Models
-models/
-models/*
+# Models and evaluation results
+*.csv
+*.json
 *.pkl
 
 # CSV files
