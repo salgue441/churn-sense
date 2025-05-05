@@ -94,7 +94,7 @@ def get_feature_names(df: pd.DataFrame) -> Tuple[list, list]:
             list: Numerical feature names.
     """
 
-    cols_to_exclude = [CONFIG["id_column"], CONFIG["target_column"]]
+    cols_to_exclude = [CONFIG.id_column, CONFIG.target_column]
     categorical_cols = df.select_dtypes(include=["object"]).columns.tolist()
     numerical_cols = df.select_dtypes(include=["int64", "float64"]).columns.tolist()
 

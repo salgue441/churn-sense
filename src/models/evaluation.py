@@ -262,7 +262,7 @@ def plot_feature_importance(
 
         elif hasattr(model, "coef_"):
             importances = np.abs(model.coef_[0])
-            
+
         elif hasattr(model, "named_steps") and hasattr(
             model.named_steps["classifier"], "feature_importances_"
         ):
@@ -368,7 +368,7 @@ def compute_permutation_importance(
     """
 
     if random_state is None:
-        random_state = CONFIG["random_seed"]
+        random_state = CONFIG.random_seed
 
     result = permutation_importance(
         model,
@@ -376,7 +376,7 @@ def compute_permutation_importance(
         y_test,
         n_repeats=n_repeats,
         random_state=random_state,
-        n_jobs=CONFIG["n_jobs"],
+        n_jobs=CONFIG.n_jobs,
     )
 
     importances_mean = result.importances_mean
@@ -410,9 +410,9 @@ def evaluate_business_impact(
         Dict[str, Any]: Dictionary with business impact metrics.
     """
 
-    avg_customer_value = CONFIG["business_metrics"]["avg_customer_value"]
-    retention_campaign_cost = CONFIG["business_metrics"]["retention_campaign_cost"]
-    retention_success_rate = CONFIG["business_metrics"]["retention_success_rate"]
+    avg_customer_value = CONFIG.avg_customer_value
+    retention_campaign_cost = CONFIG.retention_campaign_cost
+    retention_success_rate = CONFIG.retention_success_rate
 
     y_pred_proba = model.predict_proba(X_test)[:, 1]
     y_pred = (y_pred_proba >= threshold).astype(int)

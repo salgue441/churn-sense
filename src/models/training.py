@@ -157,10 +157,10 @@ def tune_hyperparameters(
     param_grid = get_model_hyperparameters(model_type)
 
     if cv is None:
-        cv = CONFIG["cv_folds"]
+        cv = CONFIG.cv_folds
 
     cv_method = StratifiedKFold(
-        n_splits=cv, shuffle=True, random_state=CONFIG["random_seed"]
+        n_splits=cv, shuffle=True, random_state=CONFIG.random_seed
     )
 
     print(f"Tuning hyperparameters for {model_name}...")
@@ -177,9 +177,9 @@ def tune_hyperparameters(
             scoring="roc_auc",
             cv=cv_method,
             n_iter=n_iter,
-            n_jobs=CONFIG["n_jobs"],
+            n_jobs=CONFIG.n_jobs,
             verbose=1,
-            random_state=CONFIG["random_seed"],
+            random_state=CONFIG.random_seed,
             return_train_score=True,
         )
 
@@ -191,7 +191,7 @@ def tune_hyperparameters(
             param_grid=param_grid,
             scoring="roc_auc",
             cv=cv_method,
-            n_jobs=CONFIG["n_jobs"],
+            n_jobs=CONFIG.n_jobs,
             verbose=1,
             return_train_score=True,
         )
@@ -222,7 +222,7 @@ def save_trained_model(model: Any, model_name: str) -> None:
         None
     """
 
-    model_dir = Path(CONFIG["models_path"])
+    model_dir = Path(CONFIG.models_path)
     model_dir.mkdir(parents=True, exist_ok=True)
 
     full_path = model_dir / f"{model_name}.pkl"
@@ -242,7 +242,7 @@ def prepare_production_model(model: Any, model_name: str) -> None:
     Returns:
         None
     """
-    
+
     production_name = f"production_{model_name.lower().replace(' ', '_')}"
     save_trained_model(model, production_name)
 

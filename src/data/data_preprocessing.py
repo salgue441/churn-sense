@@ -81,7 +81,7 @@ def save_processed_data(df: pd.DataFrame, output_path: Optional[str] = None) -> 
     """
 
     if output_path is None:
-        output_path = CONFIG["processed_data_path"]
+        output_path = CONFIG.processed_data_path
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(output_path, index=False)
@@ -107,7 +107,7 @@ def validate_categorical_features(df: pd.DataFrame) -> Tuple[bool, list]:
     categorical_cols = df.select_dtypes(include=["object"]).columns
 
     for col in categorical_cols:
-        if col == CONFIG["id_column"] or col == CONFIG["target_column"]:
+        if col == CONFIG.id_column or col == CONFIG.target_column:
             continue
 
         value_counts = df[col].value_counts(normalize=True) * 100
@@ -143,13 +143,13 @@ def validate_numerical_features(df: pd.DataFrame) -> Tuple[bool, list]:
             bool: True if validation passed, False otherwise.
             list: List of validation issues if any.
     """
-    
+
     issues = []
     validation_passed = True
     numerical_cols = df.select_dtypes(include=["int64", "float64"]).columns
 
     for col in numerical_cols:
-        if col == CONFIG["id_column"]:
+        if col == CONFIG.id_column:
             continue
 
         non_negative_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
@@ -162,7 +162,7 @@ def validate_numerical_features(df: pd.DataFrame) -> Tuple[bool, list]:
         std = df[col].std()
         outliers = ((df[col] - mean).abs() > 3 * std).sum()
 
-        if outliers > 0 and outliers / len(df) > 0.01:  # If more than 1% are outliers
+        if outliers > 0 and outliers / len(df) > 0.01:
             issues.append(
                 f"Column '{col}' has {outliers} extreme outliers (>3 std from mean)"
             )

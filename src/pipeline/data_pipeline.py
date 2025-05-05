@@ -69,9 +69,9 @@ class DataPipeline:
         if save_interim:
             self.save_cleaned_data()
 
-        self.df_featured = self.engineer_functions()
+        self.df_featured = self.engineer_features()
         self.feature_importance = self.analyze_features()
-        self.df_segmented = self.segment_customer()
+        self.df_segmented = self.segment_customers()
 
         return self.df_featured
 
@@ -87,7 +87,7 @@ class DataPipeline:
         """
 
         if data_path is None:
-            data_path = self.config["data_path"]
+            data_path = self.config.data_path
 
         print(f"Loading data from: {data_path}")
         df = load_data(data_path)
@@ -151,7 +151,7 @@ class DataPipeline:
             raise ValueError("No cleaned data. Call clean_data() first.")
 
         if output_path is None:
-            output_path = self.config["processed_data_path"]
+            output_path = self.config.processed_data_path
 
         save_processed_data(self.df_clean, output_path)
 
@@ -183,7 +183,7 @@ class DataPipeline:
         print("Analyzing feature importance")
         return analyze_feature_importance(
             self.df_featured,
-            self.config["target_column"],
+            self.config.target_column,
             self.categorical_cols,
             self.numerical_cols,
         )

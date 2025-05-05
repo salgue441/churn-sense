@@ -50,6 +50,7 @@ def create_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
                 & (df_featured[col] != "No internet service")
                 & (df_featured[col] != "No phone service")
             ).astype(int)
+
         print("✓ Created ServiceCount feature")
 
     # Feature 3: Average Spend Per Service
@@ -57,6 +58,7 @@ def create_engineered_features(df: pd.DataFrame) -> pd.DataFrame:
         df_featured["AvgSpendPerService"] = df_featured.apply(
             lambda x: x["MonthlyCharges"] / max(x["ServiceCount"], 1), axis=1
         )
+
         print("✓ Created AvgSpendPerService feature")
 
     # Feature 4: Tenure Groups
@@ -124,9 +126,9 @@ def analyze_feature_importance(
     """
 
     if target_col is None:
-        target_col = CONFIG["target_column"]
+        target_col = CONFIG.target_column
 
-    target_mapper = {CONFIG["positive_class"]: 1, "No": 0}
+    target_mapper = {CONFIG.positive_class: 1, "No": 0}
     y = df[target_col].map(target_mapper)
 
     if categorical_cols is None or numerical_cols is None:
@@ -184,8 +186,8 @@ def analyze_feature_importance(
         num_results = []
 
         for col in numerical_cols:
-            churned = df[df[target_col] == CONFIG["positive_class"]][col]
-            retained = df[df[target_col] != CONFIG["positive_class"]][col]
+            churned = df[df[target_col] == CONFIG.positive_class][col]
+            retained = df[df[target_col] != CONFIG.positive_class][col]
 
             if len(churned) < 2 or len(retained) < 2:
                 continue
@@ -271,9 +273,7 @@ def perform_customer_segmentation(
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_cluster)
 
-    kmeans = KMeans(
-        n_clusters=n_clusters, random_state=CONFIG["random_seed"], n_init=10
-    )
+    kmeans = KMeans(n_clusters=n_clusters, random_state=CONFIG.random_seed, n_init=10)
     clusters = kmeans.fit_predict(X_scaled)
 
     df_segmented["Cluster"] = clusters
@@ -287,9 +287,7 @@ def perform_customer_segmentation(
                 "CLV": "mean",
                 "ServiceCount": "mean",
                 "AvgSpendPerService": "mean",
-                CONFIG["target_column"]: lambda x: (
-                    x == CONFIG["positive_class"]
-                ).mean()
+                CONFIG.target_column: lambda x: (x == CONFIG.positive_class).mean()
                 * 100,
             }
         )
@@ -297,7 +295,7 @@ def perform_customer_segmentation(
     )
 
     cluster_analysis.rename(
-        columns={CONFIG["target_column"]: "Churn Rate (%)"}, inplace=True
+        columns={CONFIG.target_column: "Churn Rate (%)"}, inplace=True
     )
 
     print(f"Customer segmentation completed: {n_clusters} clusters created")
@@ -349,7 +347,7 @@ def get_pca_components(
             "PCA1": X_pca[:, 0],
             "PCA2": X_pca[:, 1] if n_components > 1 else np.zeros(len(X_pca)),
             "Cluster": df_segmented["Cluster"].astype(str),
-            "Churn": df_segmented[CONFIG["target_column"]],
+            "Churn": df_segmented[CONFIG.target_column],
         }
     )
 
@@ -385,7 +383,7 @@ def identify_at_risk_customers(
     if model is not None:
         try:
             X = df_risk.drop(
-                columns=[CONFIG["id_column"], CONFIG["target_column"]], errors="ignore"
+                columns=[CONFIG.id_column, CONFIG.target_column], errors="ignore"
             )
 
             churn_proba = model.predict_proba(X)[:, 1]

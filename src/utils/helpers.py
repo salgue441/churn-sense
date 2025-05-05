@@ -28,7 +28,7 @@ def save_fig(fig: plt.Figure, filename: str, dpi: int = 300) -> None:
             specified path.
     """
 
-    full_path = Path(CONFIG["figures_path"]) / filename
+    full_path = Path(CONFIG.figures_path) / filename
     fig.savefig(full_path, bbox_inches="tight", dpi=dpi)
 
     print(f"Figure saved: {full_path}")
@@ -122,7 +122,7 @@ def save_model_results(df: pd.DataFrame, filename: str) -> None:
         None
     """
 
-    full_path = Path(CONFIG["results_path"]) / filename
+    full_path = Path(CONFIG.results_path) / filename
     df.to_csv(full_path, index=False)
 
     print(f"Results saved: {full_path}")

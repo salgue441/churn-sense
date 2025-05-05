@@ -82,7 +82,7 @@ def create_model(
     """
 
     preprocessor = create_preprocessing_pipeline(categorical_cols, numerical_cols)
-    base_params = {"random_state": CONFIG["random_seed"]}
+    base_params = {"random_state": CONFIG.random_seed}
 
     if model_params:
         base_params.update(model_params)

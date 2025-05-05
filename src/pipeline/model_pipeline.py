@@ -47,8 +47,8 @@ class ModelPipeline:
         Args:
             config (Dict[str, Any], optional): Configuration dictionary. If None, uses default CONFIG.
         """
-        
-        self.config = config if config is not None else CONFIG
+
+        self.config = config if config is not None else CONFIG()
         self.X_train = None
         self.X_test = None
         self.y_train = None
@@ -146,18 +146,18 @@ class ModelPipeline:
         """
 
         if target_col is None:
-            target_col = self.config["target_column"]
+            target_col = self.config.target_column
 
         if test_size is None:
-            test_size = self.config["test_size"]
+            test_size = self.config.test_size
 
         if random_state is None:
-            random_state = self.config["random_seed"]
+            random_state = self.config.random_seed
 
-        target_mapper = {self.config["positive_class"]: 1, "No": 0}
+        target_mapper = {self.config.positive_class: 1, "No": 0}
         y = df[target_col].map(target_mapper)
 
-        X = df.drop(columns=[self.config["id_column"], target_col], errors="ignore")
+        X = df.drop(columns=[self.config.id_column, target_col], errors="ignore")
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=random_state, stratify=y
