@@ -1,0 +1,11 @@
+README.md
+pyproject.toml
+setup.py
+src/churnsense/__init__.py
+src/churnsense.egg-info/PKG-INFO
+src/churnsense.egg-info/SOURCES.txt
+src/churnsense.egg-info/dependency_links.txt
+src/churnsense.egg-info/entry_points.txt
+src/churnsense.egg-info/requires.txt
+src/churnsense.egg-info/top_level.txt
+tests/test_data_processor.py

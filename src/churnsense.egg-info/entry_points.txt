@@ -1,0 +1,4 @@
+[console_scripts]
+churnsense-dashboard = churnsense.cli:run_dashboard
+churnsense-predict = churnsense.cli:predict
+churnsense-train = churnsense.cli:train_model
