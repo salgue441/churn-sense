@@ -1,10 +1,49 @@
-# src/churnsense/utils/__init__.py
-"""Utility modules for ChurnSense."""
+"""
+Utilities module for ChurnSense.
 
-from churnsense.utils.logging import setup_logger
-from churnsense.utils.visualization import save_fig
+This module provides utility functions and classes for the ChurnSense application,
+including logging and exception handling.
+"""
+
+from churnsense.utils.logging import setup_logger, JsonLogger
+from churnsense.utils.exceptions import (
+    ChurnSenseError,
+    DataLoadError,
+    DataValidationError,
+    FeatureEngineeringError,
+    ModelCreationError,
+    ModelTrainingError,
+    ModelEvaluationError,
+    ModelSaveError,
+    ModelLoadError,
+    PredictionError,
+    VisualizationError,
+    ConfigurationError,
+    DashboardError,
+    APIError,
+    ResourceNotFoundError,
+    UnauthorizedAccessError,
+    ValidationError,
+)
 
 __all__ = [
     "setup_logger",
-    "save_fig",
+    "JsonLogger",
+    "ChurnSenseError",
+    "DataLoadError",
+    "DataValidationError",
+    "FeatureEngineeringError",
+    "ModelCreationError",
+    "ModelTrainingError",
+    "ModelEvaluationError",
+    "ModelSaveError",
+    "ModelLoadError",
+    "PredictionError",
+    "VisualizationError",
+    "ConfigurationError",
+    "DashboardError",
+    "APIError",
+    "ResourceNotFoundError",
+    "UnauthorizedAccessError",
+    "ValidationError",
 ]

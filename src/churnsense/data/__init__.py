@@ -1,13 +1,24 @@
-# src/churnsense/data/__init__.py
-"""Data handling modules for ChurnSense."""
+"""
+Data processing module for ChurnSense.
 
-from churnsense.data.loader import load_data, get_feature_types
+This module provides data loading, preprocessing, and feature engineering
+functionality for the ChurnSense application.
+"""
+
+from churnsense.data.loader import (
+    load_data,
+    load_data_async,
+    prepare_train_test_split,
+    get_feature_types,
+)
 from churnsense.data.processor import DataProcessor
-from churnsense.data.features import FeatureEngineer
+from churnsense.data.features import FeatureEngineering
 
 __all__ = [
     "load_data",
+    "load_data_async",
+    "prepare_train_test_split",
     "get_feature_types",
     "DataProcessor",
-    "FeatureEngineer",
+    "FeatureEngineering",
 ]

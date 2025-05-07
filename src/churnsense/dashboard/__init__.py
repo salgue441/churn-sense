@@ -1,6 +1,8 @@
-# src/churnsense/dashboard/__init__.py
-"""Dashboard package for ChurnSense."""
+"""
+ChurnSense Dashboard Package.
 
-from churnsense.dashboard.app import run_dashboard
+This package contains modules for visualizing customer churn data,
+making predictions, and analyzing model performance.
+"""
 
-__all__ = ["run_dashboard"]
+__version__ = "1.0.0"
